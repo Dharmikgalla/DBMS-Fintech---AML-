@@ -126,7 +126,25 @@ app.post('/api/customer/transfer', auth, async (req, res) => {
        AND transaction_status IN ('COMPLETED','PENDING')`, [from_account_id]
     );
     if ((parseFloat(dailyRows[0].daily_total) + parseFloat(amount)) > parseFloat(own.daily_limit))
-      return (await conn.rollback(), res.status(400).json({ error: `Daily limit of ₹${own.daily_limit} exceeded` }));
+      {
+        // Record the blocked attempt in transaction history.
+        // This is required so the customer sees it and the dashboard counts it as BLOCKED.
+        const [ins] = await conn.execute(
+          `INSERT INTO Transaction (from_account_id, to_account_id, amount, transaction_type, transaction_status, remarks, ip_address, transaction_timestamp)
+           VALUES (?, ?, ?, ?, 'BLOCKED', ?, ?, NOW())`,
+          [from_account_id, to_account_id, amount, transaction_type || 'TRANSFER', remarks || 'Fund transfer (blocked: daily limit exceeded)', req.ip || '127.0.0.1']
+        );
+        const txnId = ins.insertId;
+        await conn.commit();
+        return res.json({
+          transaction_id: txnId,
+          status: 'BLOCKED',
+          blocked: true,
+          amount: parseFloat(amount),
+          alerts: [],
+          message: `Transaction BLOCKED: daily limit of ₹${own.daily_limit} exceeded`
+        });
+      }
 
     // Insert transaction as PENDING
     const [ins] = await conn.execute(

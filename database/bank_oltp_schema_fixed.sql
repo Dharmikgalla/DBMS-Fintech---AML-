@@ -822,7 +822,10 @@ BEGIN
           AND DATE(transaction_timestamp) = CURDATE()
           AND transaction_status IN ('COMPLETED','PENDING');
 
-        IF (v_daily_out + NEW.amount) > v_limit THEN
+        -- Allow BLOCKED inserts to be recorded in history.
+        -- The application uses transaction_status='BLOCKED' for attempts blocked by limits,
+        -- and we still want the customer/manager to see them in Transaction history.
+        IF NEW.transaction_status IN ('PENDING','COMPLETED') AND (v_daily_out + NEW.amount) > v_limit THEN
             SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT = 'Daily transaction limit exceeded. Transaction rejected.';
         END IF;
