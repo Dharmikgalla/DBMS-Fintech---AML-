@@ -2,22 +2,25 @@
 
 ## Project Structure
 ```
-finguard/
-├── server.js          ← Express backend (connects to MySQL)
-├── package.json       ← Node dependencies
-├── seed_data.sql      ← Demo data with bcrypt password hashes
-├── public/
-│   └── index.html     ← Frontend (served by Express)
+DBMS-Fintech---AML-/
+├── backend/
+│   ├── server.js      ← Express API + serves the UI
+│   ├── package.json
+│   └── .env           ← Create from your MySQL credentials (not committed)
+├── frontend/
+│   └── public/
+│       └── index.html ← Customer & staff UI (static files served by Express)
+├── database/
+│   ├── bank_oltp_schema_fixed.sql
+│   ├── realistic_seed_data.sql
+│   ├── bank_warehouse_schema_fixed2.sql
+│   └── warehouse_seed_data.sql
 └── README.md
-
-(SQL schemas are in the root outputs folder)
-bank_oltp_schema.sql   ← Full OLTP database with AML engine
-bank_warehouse_schema.sql ← OLAP Data Warehouse
 ```
 
 ## Quick Start (Demo Mode — No Backend Needed)
-Just open `public/index.html` directly in a browser.
-The frontend runs fully in demo mode with in-memory mock data.
+Open `frontend/public/index.html` in a browser only if you use a standalone demo build.
+For the full app, run the backend and use **http://localhost:3000** (see below).
 
 **Demo Credentials:**
 | Role              | ID      | Password    |
@@ -38,19 +41,21 @@ The frontend runs fully in demo mode with in-memory mock data.
 
 ### Step 1 — Database Setup
 ```sql
--- In MySQL Workbench or CLI:
-SOURCE bank_oltp_schema.sql;    -- creates finguard_bank database + all tables
-SOURCE seed_data.sql;           -- inserts demo customers, accounts, transactions, alerts
+-- In MySQL Workbench or CLI (from the `database/` folder):
+SOURCE bank_oltp_schema_fixed.sql;
+SOURCE realistic_seed_data.sql;
+SOURCE bank_warehouse_schema_fixed2.sql;
+SOURCE warehouse_seed_data.sql;
 ```
 
 ### Step 2 — Backend Setup
 ```bash
-cd finguard
+cd backend
 npm install
 ```
 
 ### Step 3 — Configure DB Connection
-Edit server.js or set environment variables:
+Create `backend/.env` or set environment variables:
 ```bash
 export DB_HOST=localhost
 export DB_USER=root
@@ -66,14 +71,10 @@ npm start
 npm run dev
 ```
 
-### Step 5 — Connect Frontend to Backend
-In `public/index.html`, change line:
-```js
-const API_BASE = '';    // change to 'http://localhost:3000'
-const USE_MOCK  = true; // change to false
-```
+### Step 5 — Open the app
+The Express server serves `frontend/public/index.html` at the root URL.
 
-Then open: http://localhost:3000
+Open: **http://localhost:3000**
 
 ---
 
